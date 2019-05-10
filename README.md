@@ -1,13 +1,13 @@
 # A binary to download the latest Wordpress (es_ES) version
 
-Just clone the repo, cd into it and build the code.
+Just clone the repo, cd into it and build the code:
 
 ```shell
 go build .
 ```
 
-and run the executable
+Then run the generated executable:
 
 ```shell
-get-lastest-wp
+./get-lastest-wp
 ```
