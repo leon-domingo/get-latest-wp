@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"log"
 	"net/http"
@@ -30,6 +31,10 @@ func main() {
 	var langCodef string
 	flag.StringVar(&langCodef, "lang", "", "The language code in the format xx_YY")
 
+	// explicit version
+	var version string
+	flag.StringVar(&version, "version", "", "The version of Wordpress you want to download")
+
 	flag.Parse()
 
 	langCode, ok := countryCodes[countryCode]
@@ -49,19 +54,16 @@ func main() {
 		urlGetWp = "https://wordpress.org/latest.tar.gz"
 	}
 
-	log.Printf("Checking the last version of Wordpress...\n")
-	version, err := checkVersion()
-	if err != nil {
-		log.Fatal(err)
+	if version == "" {
+		log.Printf("Checking the last version of Wordpress...\n")
+		var err error
+		if version, err = checkVersion(); err != nil {
+			log.Fatal(err)
+		}
 	}
 
 	log.Printf("Downloading Wordpress %s...\n", version)
 	resWp, err := http.Get(urlGetWp)
-	if err != nil {
-		log.Fatal(err)
-	}
-
-	dataWp, err := ioutil.ReadAll(resWp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -74,32 +76,38 @@ func main() {
 		fileName = fmt.Sprintf("wordpress-%s.tar.gz", version)
 	}
 
-	fileWp, err := os.OpenFile(fileName, os.O_CREATE|os.O_RDWR, 0644)
+	fileWp, err := os.Create(fileName)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer fileWp.Close()
 
-	fileWp.Write(dataWp)
+	// read from the reader (resWp.Body) and copy to the writer (fileWp)
+	_, err = io.Copy(fileWp, resWp.Body)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	log.Printf("\"%s\" file was successfully downloaded!\n", fileName)
 }
 
 // checkVersion request the latest version using an API endpoint provided by Wordpress
 func checkVersion() (string, error) {
+
 	urlGetVersion := "https://api.wordpress.org/core/version-check/1.7/"
 
 	resVersion, err := http.Get(urlGetVersion)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer resVersion.Body.Close()
 
 	dataVersion, err := ioutil.ReadAll(resVersion.Body)
 	if err != nil {
 		return "", err
 	}
-	defer resVersion.Body.Close()
 
-	version, _, _, err := jsonparser.Get(dataVersion, "offers", "[0]", "current")
+	version, err := jsonparser.GetString(dataVersion, "offers", "[0]", "current")
 	if err != nil {
 		return "", err
 	}
