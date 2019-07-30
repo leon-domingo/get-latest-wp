@@ -112,5 +112,5 @@ func checkVersion() (string, error) {
 		return "", err
 	}
 
-	return string(version), nil
+	return version, nil
 }
