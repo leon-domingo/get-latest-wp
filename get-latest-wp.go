@@ -46,12 +46,12 @@ func main() {
 		langCode = langCodef
 	}
 
-	var urlGetWp string
+	var getWpURL string
 	if countryCode != "en" {
-		urlGetWp = fmt.Sprintf("https://%s.wordpress.org/latest-%s.tar.gz", countryCode, langCode)
+		getWpURL = fmt.Sprintf("https://%s.wordpress.org/latest-%s.tar.gz", countryCode, langCode)
 	} else {
 		// en
-		urlGetWp = "https://wordpress.org/latest.tar.gz"
+		getWpURL = "https://wordpress.org/latest.tar.gz"
 	}
 
 	if version == "" {
@@ -63,7 +63,7 @@ func main() {
 	}
 
 	log.Printf("Downloading Wordpress %s...\n", version)
-	resWp, err := http.Get(urlGetWp)
+	resWp, err := http.Get(getWpURL)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -94,9 +94,9 @@ func main() {
 // checkVersion request the latest version using an API endpoint provided by Wordpress
 func checkVersion() (string, error) {
 
-	urlGetVersion := "https://api.wordpress.org/core/version-check/1.7/"
+	const getVersionURL = "https://api.wordpress.org/core/version-check/1.7/"
 
-	resVersion, err := http.Get(urlGetVersion)
+	resVersion, err := http.Get(getVersionURL)
 	if err != nil {
 		log.Fatal(err)
 	}
