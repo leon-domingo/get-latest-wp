@@ -1,4 +1,4 @@
-module leon-domingo.com/get-latest-wp
+module github.com/leon-domingo/get-latest-wp
 
 go 1.12
 
