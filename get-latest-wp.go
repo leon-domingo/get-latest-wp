@@ -31,8 +31,8 @@ func main() {
 	flag.StringVar(&countryCode, "country", "en", "The two-letter country code for the version you want to download (en-english, es-spanish, de-german, fr-french, ...)")
 	countryCode = strings.ToLower(countryCode)
 
-	var langCodef string
-	flag.StringVar(&langCodef, "lang", "", "The language code in the format xx_YY")
+	var langCodeFlag string
+	flag.StringVar(&langCodeFlag, "lang", "", "The language code in the format xx_YY")
 
 	var version string
 	flag.StringVar(&version, "version", "", "The version of Wordpress you want to download in the format X.Y.Z")
@@ -41,10 +41,10 @@ func main() {
 
 	langCode, ok := countryCodes[countryCode]
 	if !ok {
-		if langCodef == "" {
+		if langCodeFlag == "" {
 			log.Fatalf("Language code for country \"%s\" was not found. You can use the -lang flag in combination with the -country flag to manually indicate the country and the lang like so:\n./get-latest-wp -country xx -lang xx_XX", countryCode)
 		}
-		langCode = langCodef
+		langCode = langCodeFlag
 	}
 
 	if version == "" {
@@ -70,18 +70,18 @@ func main() {
 		fileName = fmt.Sprintf("wordpress-%s-%s.tar.gz", version, langCode)
 	}
 
-	fileWp, err := os.Create(fileName)
+	downloadedFile, err := os.Create(fileName)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer fileWp.Close()
+	defer downloadedFile.Close()
 
-	_, err = io.Copy(fileWp, resWp.Body)
+	_, err = io.Copy(downloadedFile, resWp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Printf(`"%s" file was successfully downloaded!\n`, fileName)
+	log.Printf("%s file was successfully downloaded!\n", fileName)
 }
 
 func getDownloadWordpressURL(countryCode, langCode string, version string) string {
