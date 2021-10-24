@@ -1,5 +1,5 @@
 module github.com/leon-domingo/get-latest-wp
 
-go 1.12
+go 1.17
 
-require github.com/buger/jsonparser v0.0.0-20181115193947-bf1c66bbce23
+require github.com/buger/jsonparser v1.1.1

@@ -21,19 +21,21 @@ var countryCodes = map[string]string{
 	"it": "it_IT",
 }
 
-func main() {
+const (
+	getVersionURL   = "https://api.wordpress.org/core/version-check/1.7/"
+	baseDownloadURL = "https://download.wordpress.org"
+)
 
+func main() {
 	var countryCode string
 	flag.StringVar(&countryCode, "country", "en", "The two-letter country code for the version you want to download (en-english, es-spanish, de-german, fr-french, ...)")
-
 	countryCode = strings.ToLower(countryCode)
 
 	var langCodef string
 	flag.StringVar(&langCodef, "lang", "", "The language code in the format xx_YY")
 
-	// explicit version
 	var version string
-	flag.StringVar(&version, "version", "", "The version of Wordpress you want to download")
+	flag.StringVar(&version, "version", "", "The version of Wordpress you want to download in the format X.Y.Z")
 
 	flag.Parse()
 
@@ -42,20 +44,11 @@ func main() {
 		if langCodef == "" {
 			log.Fatalf("Language code for country \"%s\" was not found. You can use the -lang flag in combination with the -country flag to manually indicate the country and the lang like so:\n./get-latest-wp -country xx -lang xx_XX", countryCode)
 		}
-
 		langCode = langCodef
 	}
 
-	var getWpURL string
-	if countryCode != "en" {
-		getWpURL = fmt.Sprintf("https://%s.wordpress.org/latest-%s.tar.gz", countryCode, langCode)
-	} else {
-		// en
-		getWpURL = "https://wordpress.org/latest.tar.gz"
-	}
-
 	if version == "" {
-		log.Printf("Checking the last version of Wordpress...\n")
+		log.Println("Checking the latest version of Wordpress...")
 		var err error
 		if version, err = checkVersion(); err != nil {
 			log.Fatal(err)
@@ -63,17 +56,18 @@ func main() {
 	}
 
 	log.Printf("Downloading Wordpress %s...\n", version)
-	resWp, err := http.Get(getWpURL)
+	resWp, err := http.Get(getDownloadWordpressURL(countryCode, langCode, version))
 	if err != nil {
 		log.Fatal(err)
+	} else if resWp.StatusCode == http.StatusNotFound {
+		log.Fatalf("Version %s does not exist", version)
+	} else if resWp.StatusCode != http.StatusOK {
+		log.Fatalf("An error ocurred while downloading Wordpress (%d)", resWp.StatusCode)
 	}
 
-	var fileName string
+	fileName := fmt.Sprintf("wordpress-%s.tar.gz", version)
 	if countryCode != "en" {
 		fileName = fmt.Sprintf("wordpress-%s-%s.tar.gz", version, langCode)
-	} else {
-		// en
-		fileName = fmt.Sprintf("wordpress-%s.tar.gz", version)
 	}
 
 	fileWp, err := os.Create(fileName)
@@ -82,20 +76,24 @@ func main() {
 	}
 	defer fileWp.Close()
 
-	// read from the reader (resWp.Body) and copy to the writer (fileWp)
 	_, err = io.Copy(fileWp, resWp.Body)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	log.Printf("\"%s\" file was successfully downloaded!\n", fileName)
+	log.Printf(`"%s" file was successfully downloaded!\n`, fileName)
 }
 
-// checkVersion request the latest version using an API endpoint provided by Wordpress
+func getDownloadWordpressURL(countryCode, langCode string, version string) string {
+	wordpressURL := fmt.Sprintf(baseDownloadURL+"/wordpress-%s.tar.gz", version)
+	if countryCode != "en" {
+		wordpressURL = fmt.Sprintf(baseDownloadURL+"/wordpress-%s-%s.tar.gz", version, langCode)
+	}
+	return wordpressURL
+}
+
+// checkVersion requests the latest version using an API endpoint provided by Wordpress
 func checkVersion() (string, error) {
-
-	const getVersionURL = "https://api.wordpress.org/core/version-check/1.7/"
-
 	resVersion, err := http.Get(getVersionURL)
 	if err != nil {
 		log.Fatal(err)
