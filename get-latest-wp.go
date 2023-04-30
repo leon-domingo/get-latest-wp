@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -22,8 +21,8 @@ var countryCodes = map[string]string{
 }
 
 const (
-	getVersionURL   = "https://api.wordpress.org/core/version-check/1.7/"
-	baseDownloadURL = "https://download.wordpress.org"
+	GET_VERSION_URL   = "https://api.wordpress.org/core/version-check/1.7/"
+	BASE_DOWNLOAD_URL = "https://download.wordpress.org"
 )
 
 func main() {
@@ -85,22 +84,23 @@ func main() {
 }
 
 func getDownloadWordpressURL(countryCode, langCode string, version string) string {
-	wordpressURL := fmt.Sprintf(baseDownloadURL+"/wordpress-%s.tar.gz", version)
+	wordpressURL := fmt.Sprintf("%s/wordpress-%s.tar.gz", BASE_DOWNLOAD_URL, version)
 	if countryCode != "en" {
-		wordpressURL = fmt.Sprintf(baseDownloadURL+"/wordpress-%s-%s.tar.gz", version, langCode)
+		wordpressURL = fmt.Sprintf("%s/wordpress-%s-%s.tar.gz", BASE_DOWNLOAD_URL, version, langCode)
 	}
+
 	return wordpressURL
 }
 
 // checkVersion requests the latest version using an API endpoint provided by Wordpress
 func checkVersion() (string, error) {
-	resVersion, err := http.Get(getVersionURL)
+	resVersion, err := http.Get(GET_VERSION_URL)
 	if err != nil {
 		log.Fatal(err)
 	}
 	defer resVersion.Body.Close()
 
-	dataVersion, err := ioutil.ReadAll(resVersion.Body)
+	dataVersion, err := io.ReadAll(resVersion.Body)
 	if err != nil {
 		return "", err
 	}
