@@ -3,7 +3,7 @@
 Just clone the repo, cd into it and build the code:
 
 ```shell
-go build .
+./build.sh
 ```
 
 Then run the generated executable using the **country code** you want. By default is _en_:
