@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"fmt"
 	"io"
@@ -8,8 +9,6 @@ import (
 	"net/http"
 	"os"
 	"strings"
-
-	"github.com/buger/jsonparser"
 )
 
 var countryCodes = map[string]string{
@@ -24,6 +23,14 @@ const (
 	GET_VERSION_URL   = "https://api.wordpress.org/core/version-check/1.7/"
 	BASE_DOWNLOAD_URL = "https://download.wordpress.org"
 )
+
+type WordpressVersionAPI struct {
+	Offers []Offer `json:"offers"`
+}
+
+type Offer struct {
+	Current string `json:"current"`
+}
 
 func main() {
 	var countryCode string
@@ -100,15 +107,16 @@ func checkVersion() (string, error) {
 	}
 	defer resVersion.Body.Close()
 
-	dataVersion, err := io.ReadAll(resVersion.Body)
+	versionContent, err := io.ReadAll(resVersion.Body)
 	if err != nil {
 		return "", err
 	}
 
-	version, err := jsonparser.GetString(dataVersion, "offers", "[0]", "current")
+	var versionData WordpressVersionAPI
+	err = json.Unmarshal(versionContent, &versionData)
 	if err != nil {
 		return "", err
 	}
 
-	return version, nil
+	return versionData.Offers[0].Current, nil
 }
